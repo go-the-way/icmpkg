@@ -32,8 +32,8 @@ const (
 
 // Global variables controlling debug and trace logging based on environment variables.
 var (
-	icmpktDebug = os.Getenv("ICMPKT_DEBUG") == "T" // Enables debug logging if ICMPKT_DEBUG is set to "T".
-	icmpktTrace = os.Getenv("ICMPKT_TRACE") == "T" // Enables trace logging if ICMPKT_TRACE is set to "T".
+	icmpkgDebug = func() bool { return os.Getenv("ICMPKG_DEBUG") == "T" } // Enables debug logging if ICMPKG_DEBUG is set to "T".
+	icmpkgTrace = func() bool { return os.Getenv("ICMPKG_TRACE") == "T" } // Enables trace logging if ICMPKG_TRACE is set to "T".
 )
 
 // ttlOpt stores TTL (Time To Live) and timestamp information for a packet.
@@ -64,7 +64,7 @@ func newPacket(wc chan<- *Proto, rc <-chan *Proto) *packet {
 		rec: make(chan struct{}, 1),  // Initialize read exit channel with buffer size 1.
 	}
 	// Set up logger if debug or trace mode is enabled.
-	if icmpktDebug || icmpktTrace {
+	if icmpkgDebug() || icmpkgTrace() {
 		pkt.lo = logpkg.New(os.Stdout, fmt.Sprintf("[icmp-packet%0-18s] ", ""), logpkg.LstdFlags)
 	}
 	// Start the packet handler's main loop.
@@ -74,14 +74,14 @@ func newPacket(wc chan<- *Proto, rc <-chan *Proto) *packet {
 
 // debug logs a debug message if debug mode is enabled.
 func (p *packet) debug(format string, arg ...any) {
-	if icmpktDebug {
+	if icmpkgDebug() {
 		p.lo.Println(fmt.Sprintf(format, arg...)) // Log formatted debug message.
 	}
 }
 
 // trace logs a trace message if trace mode is enabled.
 func (p *packet) trace(format string, arg ...any) {
-	if icmpktTrace {
+	if icmpkgTrace() {
 		p.lo.Println(fmt.Sprintf(format, arg...)) // Log formatted trace message.
 	}
 }

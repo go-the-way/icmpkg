@@ -119,8 +119,8 @@ func main() {
 
 The package supports debug and trace logging controlled by environment variables:
 
-- `ICMPKT_DEBUG=T`: Enable debug logging for low-level packet operations.
-- `ICMPKT_TRACE=T`: Enable trace logging for low-level packet operations.
+- `ICMPKG_DEBUG=T`: Enable debug logging for low-level packet operations.
+- `ICMPKG_TRACE=T`: Enable trace logging for low-level packet operations.
 - `PING_DEBUG=T`: Enable debug logging for ping operations.
 - `PING_TRACE=T`: Enable trace logging for ping operations.
 - `TRACEROUTE_DEBUG=T`: Enable debug logging for traceroute operations.

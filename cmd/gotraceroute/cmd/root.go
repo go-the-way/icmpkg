@@ -35,11 +35,11 @@ sequence number, output format (text, json, xml), and signal handling for gracef
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Set debug and trace environment variables
 		if debug {
-			os.Setenv("ICMPKT_DEBUG", "T")
+			os.Setenv("ICMPKG_DEBUG", "T")
 			os.Setenv("TRACEROUTE_DEBUG", "T")
 		}
 		if trace {
-			os.Setenv("ICMPKT_TRACE", "T")
+			os.Setenv("ICMPKG_TRACE", "T")
 			os.Setenv("TRACEROUTE_TRACE", "T")
 		}
 	},

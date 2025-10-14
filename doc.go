@@ -25,7 +25,7 @@
 //   - Support for both ping and traceroute modes, distinguished by the traceroute flag.
 //   - Configurable write and read timeouts for flexible operation timing.
 //   - Thread-safe handling of ICMP packets using mutexes and atomic operations.
-//   - Debug and trace logging controlled by environment variables (e.g., ICMPKT_DEBUG, PING_DEBUG, TRACEROUTE_DEBUG).
+//   - Debug and trace logging controlled by environment variables (e.g., ICMPKG_DEBUG, PING_DEBUG, TRACEROUTE_DEBUG).
 //   - Context support for operation cancellation.
 //   - Customizable pong handlers for processing ICMP responses.
 //
@@ -46,8 +46,8 @@
 //	tr.Run()
 //
 // Environment variables:
-//   - ICMPKT_DEBUG: Set to "T" to enable debug logging for packet operations.
-//   - ICMPKT_TRACE: Set to "T" to enable trace logging for packet operations.
+//   - ICMPKG_DEBUG: Set to "T" to enable debug logging for packet operations.
+//   - ICMPKG_TRACE: Set to "T" to enable trace logging for packet operations.
 //   - PING_DEBUG: Set to "T" to enable debug logging for ping operations.
 //   - PING_TRACE: Set to "T" to enable trace logging for ping operations.
 //   - TRACEROUTE_DEBUG: Set to "T" to enable debug logging for traceroute operations.

@@ -35,11 +35,11 @@ output format (text, json, xml), and signal handling for graceful shutdown.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Set debug and trace environment variables
 		if debug {
-			os.Setenv("ICMPKT_DEBUG", "T")
+			os.Setenv("ICMPKG_DEBUG", "T")
 			os.Setenv("PING_DEBUG", "T")
 		}
 		if trace {
-			os.Setenv("ICMPKT_TRACE", "T")
+			os.Setenv("ICMPKG_TRACE", "T")
 			os.Setenv("PING_TRACE", "T")
 		}
 	},
@@ -47,8 +47,8 @@ output format (text, json, xml), and signal handling for graceful shutdown.`,
 		target := args[0]
 		ping := icmpkg.PingDuration(target, count, writeTimeout, readTimeout)
 		var stats pingStats
-
-		if sysOutput {
+		sys := !textOutput && !jsonOutput && !xmlOutput
+		if sys {
 			// Print header similar to system ping
 			fmt.Printf("PING %s (%s) 56 bytes of data.\n", target, ping.Ip4())
 		}
@@ -67,23 +67,23 @@ output format (text, json, xml), and signal handling for graceful shutdown.`,
 			} else if xmlOutput {
 				data, _ := xml.Marshal(outputProto)
 				fmt.Printf("%s\n", data)
-			} else if sysOutput {
+			} else if textOutput {
+				fmt.Println(outputProto.String())
+			} else {
 				// System ping-style output
 				stats.transmitted++
 				if pong.Rtt == 0 {
-					fmt.Printf("Request timeout for icmp_seq %d\n", pong.Seq)
+					fmt.Printf("Request timeout for icmp_id %d icmp_seq %d\n", pong.ID, pong.Seq)
 				} else {
 					stats.received++
-					fmt.Printf("64 bytes from %s: icmp_seq=%d ttl=%d time=%d ms\n", pong.Ip4, pong.Seq, pong.TTL, pong.Rtt.Milliseconds())
+					fmt.Printf("64 bytes from %s: icmp_id=%d icmp_seq=%d time=%d ms\n", pong.Ip4, pong.ID, pong.Seq, pong.Rtt.Milliseconds())
 				}
 				rttMs := float64(pong.Rtt) / float64(time.Millisecond)
 				stats.rttS = append(stats.rttS, rttMs)
-			} else {
-				fmt.Println(outputProto.String())
 			}
 		})
 		ping.Run()
-		if sysOutput {
+		if sys {
 			loss := float64(stats.transmitted-stats.received) / float64(stats.transmitted) * 100
 			fmt.Printf("\n--- %s ping statistics ---\n", target)
 			fmt.Printf("%d packets transmitted, %d received, %.1f%% packet loss\n", stats.transmitted, stats.received, loss)
@@ -100,9 +100,9 @@ var (
 	count        int           // Number of ICMP packets to send
 	writeTimeout time.Duration // Write timeout duration
 	readTimeout  time.Duration // Read timeout duration
+	textOutput   bool          // Enable Text output
 	jsonOutput   bool          // Enable JSON output
 	xmlOutput    bool          // Enable XML output
-	sysOutput    bool          // Enable System output
 	debug        bool          // Enable debug logging
 	trace        bool          // Enable trace logging
 )
@@ -112,9 +112,9 @@ func init() {
 	rootCmd.Flags().IntVarP(&count, "count", "c", 3, "Number of ICMP packets to send")
 	rootCmd.Flags().DurationVarP(&writeTimeout, "write-timeout", "w", 500*time.Millisecond, "Write timeout duration")
 	rootCmd.Flags().DurationVarP(&readTimeout, "read-timeout", "r", 500*time.Millisecond, "Read timeout duration")
+	rootCmd.Flags().BoolVarP(&textOutput, "text", "t", false, "Enable Text output")
 	rootCmd.Flags().BoolVarP(&jsonOutput, "json", "j", false, "Enable JSON output")
 	rootCmd.Flags().BoolVarP(&xmlOutput, "xml", "x", false, "Enable XML output")
-	rootCmd.Flags().BoolVarP(&sysOutput, "sys", "s", false, "Enable System output")
 	rootCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug logging")
 	rootCmd.Flags().BoolVar(&trace, "trace", false, "Enable trace logging")
 }

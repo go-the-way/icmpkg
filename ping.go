@@ -18,8 +18,8 @@ import (
 
 // Global variables controlling debug and trace logging based on environment variables.
 var (
-	pingDebug = os.Getenv("PING_DEBUG") == "T" // Enables debug logging if PING_DEBUG is set to "T".
-	pingTrace = os.Getenv("PING_TRACE") == "T" // Enables trace logging if PING_TRACE is set to "T".
+	pingDebug = func() bool { return os.Getenv("PING_DEBUG") == "T" } // Enables debug logging if PING_DEBUG is set to "T".
+	pingTrace = func() bool { return os.Getenv("PING_TRACE") == "T" } // Enables trace logging if PING_TRACE is set to "T".
 )
 
 // ping is an alias for the traceroute type, used for ICMP ping operations.

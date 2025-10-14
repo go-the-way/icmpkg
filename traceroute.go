@@ -24,15 +24,13 @@ import (
 
 // Global variables for ICMP ID generation and debug/trace logging.
 var (
-	icmpId          = uint32(os.Getpid() & 0xffff)         // Initial ICMP ID derived from process ID, masked to 16 bits.
-	tracerouteDebug = os.Getenv("TRACEROUTE_DEBUG") == "T" // Enables debug logging if TRACEROUTE_DEBUG is set to "T".
-	tracerouteTrace = os.Getenv("TRACEROUTE_TRACE") == "T" // Enables trace logging if TRACEROUTE_TRACE is set to "T".
+	icmpId          = uint32(os.Getpid() & 0xffff)                                // Initial ICMP ID derived from process ID, masked to 16 bits.
+	tracerouteDebug = func() bool { return os.Getenv("TRACEROUTE_DEBUG") == "T" } // Enables debug logging if TRACEROUTE_DEBUG is set to "T".
+	tracerouteTrace = func() bool { return os.Getenv("TRACEROUTE_TRACE") == "T" } // Enables trace logging if TRACEROUTE_TRACE is set to "T".
 )
 
 // nextIcmpId generates the next ICMP ID, incrementing atomically and wrapping around at 2^15.
-func nextIcmpId() uint32 {
-	return atomic.AddUint32(&icmpId, 1) % (2 << 15)
-}
+func nextIcmpId() uint32 { return atomic.AddUint32(&icmpId, 1) % (2 << 15) }
 
 // traceroute manages ICMP-based ping or traceroute operations with configuration and synchronization.
 type traceroute struct {
@@ -91,11 +89,11 @@ func newTraceroute(address string, maxTTL, count int, writeDur, readDur time.Dur
 	// Resolve the target address and its IPv4 string representation.
 	tr.addr, tr.ip4 = ip4(address)
 	// Set up logger for ping mode if debug or trace is enabled.
-	if !route && (pingDebug || pingTrace) {
+	if !route && (pingDebug() || pingTrace()) {
 		tr.lo = logpkg.New(os.Stdout, fmt.Sprintf("[ping:%-24s] ", tr.address), logpkg.LstdFlags)
 	}
 	// Set up logger for traceroute mode if debug or trace is enabled.
-	if route && (tracerouteDebug || tracerouteTrace) {
+	if route && (tracerouteDebug() || tracerouteTrace()) {
 		tr.lo = logpkg.New(os.Stdout, fmt.Sprintf("[route:%-23s] ", tr.address), logpkg.LstdFlags)
 	}
 	return tr
@@ -103,20 +101,20 @@ func newTraceroute(address string, maxTTL, count int, writeDur, readDur time.Dur
 
 // debug logs a debug message if debug mode is enabled for ping or traceroute.
 func (tr *traceroute) debug(format string, arg ...any) {
-	if tr.traceroute && tracerouteDebug {
+	if tr.traceroute && tracerouteDebug() {
 		tr.lo.Println(fmt.Sprintf(format, arg...)) // Log debug message in traceroute mode.
 	}
-	if !tr.traceroute && pingDebug {
+	if !tr.traceroute && pingDebug() {
 		tr.lo.Println(fmt.Sprintf(format, arg...)) // Log debug message in ping mode.
 	}
 }
 
 // trace logs a trace message if trace mode is enabled for ping or traceroute.
 func (tr *traceroute) trace(format string, arg ...any) {
-	if tr.traceroute && tracerouteTrace {
+	if tr.traceroute && tracerouteTrace() {
 		tr.lo.Println(fmt.Sprintf(format, arg...)) // Log trace message in traceroute mode.
 	}
-	if !tr.traceroute && pingTrace {
+	if !tr.traceroute && pingTrace() {
 		tr.lo.Println(fmt.Sprintf(format, arg...)) // Log trace message in ping mode.
 	}
 }
@@ -134,9 +132,7 @@ func (tr *traceroute) Context(ctx context.Context) {
 }
 
 // PongHandler sets the callback function for handling pong responses.
-func (tr *traceroute) PongHandler(handler func(pong *Proto)) {
-	tr.pongHandler = handler
-}
+func (tr *traceroute) PongHandler(handler func(pong *Proto)) { tr.pongHandler = handler }
 
 // Run starts the traceroute or ping operation, ensuring it runs only once.
 func (tr *traceroute) Run() {
@@ -156,10 +152,12 @@ func (tr *traceroute) Run() {
 // Stop terminates the traceroute or ping operation, ensuring it stops only once.
 func (tr *traceroute) Stop() {
 	fn := func() {
-		tr.trace("Stop() start")      // Log start of Stop operation.
-		defer tr.trace("Stop() end")  // Log end of Stop operation.
-		tr.exit = true                // Set exit flag.
-		tr.packet.stop()              // Stop the packet handler.
+		tr.trace("Stop() start")     // Log start of Stop operation.
+		defer tr.trace("Stop() end") // Log end of Stop operation.
+		tr.exit = true               // Set exit flag.
+		if tr.packet != nil {
+			tr.packet.stop() // Stop the packet handler.
+		}
 		tr.pec <- struct{}{}          // Signal pong goroutine to exit.
 		close(tr.pec)                 // Close pong exit channel.
 		tr.trace("Stop() closed pec") // Log pong channel closure.
